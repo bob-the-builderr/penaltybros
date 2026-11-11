@@ -13,9 +13,7 @@ Penalty Bros is a lightweight, responsive browser-based 1v1 penalty shootout gam
    - **Rookie**: Casual exploration (~80% random), ignores history.
    - **Pro**: Tracks frequency of your past picks, mixes favored zones with adjacent coverage.
    - **Mind-Reader**: Detects patterns (repeats, alternating 2-cycles, post-save shifts), counter-reads your habits, and exploits predictable tendencies while maintaining ~20-25% unpredictability.
-2. **Local 2-Player (Pass & Play)**
-   - Turn-based hidden picks on a single device with a discrete "Pass the Device" screen so neither player can see the other's pick before the cinematic reveal.
-3. **🌐 Online 1v1 Globally (PartyKit WebSockets)**
+2. **🌐 Online 1v1 Globally (Serverless WebRTC)**
    - **Quick Match**: Instant matchmaking with any player online worldwide.
    - **Private Rooms**: 4-letter room codes (e.g. `PK42`) with 1-click shareable links (`?room=PK42`).
    - **Simultaneous Secret Commit-Reveal**: Neither player's pick is revealed to the rival until both have committed or the 10-second timer expires.
@@ -133,7 +131,7 @@ npm install
 ```bash
 npm run dev
 ```
-Open `http://localhost:5173` in your browser. You can play vs AI, Pass & Play, or open two tabs to test **Online 1v1** matchmaking and shareable room links!
+Open `http://localhost:5173` in your browser. You can play vs AI, or open two tabs to test **Online 1v1** matchmaking and shareable room links!
 
 ### Running Tests
 ```bash
@@ -146,5 +144,5 @@ npm test
 3. Click **Deploy**.
 4. In **Settings → Domains**, add your custom domain (`penaltybros.com`).
 
-Everything (single-player, local 2-player, and global 1v1 online multiplayer) runs directly through Vercel with **zero external backend servers** to maintain or pay for!
+Everything (single-player vs AI and global 1v1 online multiplayer) runs directly through Vercel with **zero external backend servers** to maintain or pay for!
 

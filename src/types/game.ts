@@ -41,7 +41,7 @@ export function zoneToDirection(zone: Zone): Direction {
 
 export type PlayerId = 'p1' | 'p2';
 export type PlayerRole = 'shooter' | 'keeper';
-export type GameMode = 'ai' | 'pass_and_play' | 'online';
+export type GameMode = 'ai' | 'online';
 export type AIDifficulty = 'rookie' | 'pro' | 'mind_reader';
 
 export type OutcomeType =

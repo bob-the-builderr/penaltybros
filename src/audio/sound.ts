@@ -211,48 +211,97 @@ export class SoundManager {
   }
 
   /**
-   * Referee whistle
+   * Authentic soccer referee whistle (classic triple whistle for Full Time: pip - pip - PEEEEEP!)
    */
-  public playWhistle(short = false): void {
+  public playWhistle(fullTime = true): void {
     const ctx = this.initCtx();
     if (!ctx || this.isMuted) return;
 
-    const t = ctx.currentTime;
-    const duration = short ? 0.18 : 0.45;
+    if (fullTime) {
+      // Official full-time whistle pattern: short, short, long
+      this.blowSingleWhistle(ctx.currentTime, 0.12, 0.35);
+      this.blowSingleWhistle(ctx.currentTime + 0.19, 0.12, 0.35);
+      this.blowSingleWhistle(ctx.currentTime + 0.38, 0.55, 0.45);
+      this.playGoalCheer();
+    } else {
+      this.blowSingleWhistle(ctx.currentTime, 0.22, 0.38);
+    }
+  }
 
+  private blowSingleWhistle(startTime: number, duration: number, volume: number): void {
+    const ctx = this.initCtx();
+    if (!ctx) return;
+
+    // Dual-tone whistle chamber frequencies (Fox 40 classic: ~2150Hz and ~2380Hz)
     const osc1 = ctx.createOscillator();
     const osc2 = ctx.createOscillator();
     const gain = ctx.createGain();
 
     osc1.type = 'sine';
     osc2.type = 'sine';
-    osc1.frequency.setValueAtTime(2520, t);
-    osc2.frequency.setValueAtTime(2880, t);
+    osc1.frequency.setValueAtTime(2150, startTime);
+    osc2.frequency.setValueAtTime(2380, startTime);
 
-    // Subtle vibrato
-    const lfo = ctx.createOscillator();
-    const lfoGain = ctx.createGain();
-    lfo.frequency.setValueAtTime(32, t);
-    lfoGain.gain.setValueAtTime(25, t);
-    lfo.connect(osc1.frequency);
-    lfo.connect(osc2.frequency);
+    // Whistle pea-trill (rapid pressure modulation ~24 Hz)
+    const trill = ctx.createOscillator();
+    const trillGain = ctx.createGain();
+    trill.frequency.setValueAtTime(24, startTime);
+    trillGain.gain.setValueAtTime(140, startTime);
+    trill.connect(osc1.frequency);
+    trill.connect(osc2.frequency);
 
-    gain.gain.setValueAtTime(0.01, t);
-    gain.gain.linearRampToValueAtTime(0.4, t + 0.03);
-    gain.gain.setValueAtTime(0.4, t + duration - 0.05);
-    gain.gain.exponentialRampToValueAtTime(0.001, t + duration);
+    // Human breath rise and fall envelope
+    gain.gain.setValueAtTime(0.001, startTime);
+    gain.gain.linearRampToValueAtTime(volume, startTime + 0.025);
+    gain.gain.setValueAtTime(volume * 0.9, startTime + duration - 0.04);
+    gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
 
     osc1.connect(gain);
     osc2.connect(gain);
     gain.connect(this.masterGain!);
 
-    lfo.start(t);
-    osc1.start(t);
-    osc2.start(t);
+    trill.start(startTime);
+    osc1.start(startTime);
+    osc2.start(startTime);
 
-    lfo.stop(t + duration);
-    osc1.stop(t + duration);
-    osc2.stop(t + duration);
+    trill.stop(startTime + duration);
+    osc1.stop(startTime + duration);
+    osc2.stop(startTime + duration);
+
+    // Airy turbulent breath layer
+    this.playWhistleAirBreath(startTime, duration, volume * 0.25);
+  }
+
+  private playWhistleAirBreath(startTime: number, duration: number, volume: number): void {
+    const ctx = this.initCtx();
+    if (!ctx) return;
+
+    const bufferSize = Math.floor(ctx.sampleRate * duration);
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = Math.random() * 2 - 1;
+    }
+
+    const noise = ctx.createBufferSource();
+    noise.buffer = buffer;
+
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.setValueAtTime(2250, startTime);
+    filter.Q.value = 3.5;
+
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.001, startTime);
+    gain.gain.linearRampToValueAtTime(volume, startTime + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+
+    noise.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.masterGain!);
+
+    noise.start(startTime);
+    noise.stop(startTime + duration);
   }
 
   /**

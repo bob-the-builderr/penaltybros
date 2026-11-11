@@ -52,7 +52,6 @@ export class PenaltyApp {
   private onlineRoomCode = '';
   private onlineWaitingForOpponent = false;
   private onlineStatusMessage = '';
-  private onlineOpponentLocked = false;
   private onlineDisconnectBanner: string | null = null;
   private onlineRematchRequestedByMe = false;
   private onlineRematchRequestedByOpponent = false;
@@ -72,10 +71,6 @@ export class PenaltyApp {
   // Turn timer
   private timerSecondsRemaining = 10;
   private timerInterval: number | null = null;
-
-  // Pass and play UI state
-  private passAndPlayWaiting = false;
-  private passAndPlayTargetPlayer: PlayerId = 'p2';
 
   // Modals
   private rulesModalOpen = false;
@@ -129,7 +124,7 @@ export class PenaltyApp {
         }
       }
 
-      if (this.currentScreen === 'match' && !this.passAndPlayWaiting && this.isAwaitingAction) {
+      if (this.currentScreen === 'match' && this.isAwaitingAction) {
         const key = e.key.toUpperCase();
 
         if (key === 'ARROWLEFT' || key === 'A' || key === '1') {
@@ -169,23 +164,18 @@ export class PenaltyApp {
     this.render();
   }
 
-  private startNewMatch(mode: GameMode): void {
+  private startNewMatch(mode: GameMode = 'ai'): void {
     this.selectedMode = mode;
 
     // Coin toss deciding first kicker
     const p1KicksFirst = Math.random() < 0.5;
     const firstKicker: PlayerId = p1KicksFirst ? 'p1' : 'p2';
 
-    if (mode === 'ai') {
-      this.match = createMatch('ai', this.selectedDifficulty, firstKicker, 'Player 1', 'AI Rival');
-    } else {
-      this.match = createMatch('pass_and_play', this.selectedDifficulty, firstKicker, 'Player 1', 'Player 2');
-    }
+    this.match = createMatch('ai', this.selectedDifficulty, firstKicker, 'Player 1', 'AI Rival');
 
     this.currentScreen = 'match';
     this.p1Pick = null;
     this.p2Pick = null;
-    this.passAndPlayWaiting = false;
 
     // Render match shell ONCE
     this.render();
@@ -207,7 +197,7 @@ export class PenaltyApp {
 
     // Direct canvas zone click handling
     canvas.addEventListener('click', (e) => {
-      if (!this.isAwaitingAction || this.passAndPlayWaiting) return;
+      if (!this.isAwaitingAction) return;
       const rect = canvas.getBoundingClientRect();
       const clickX = e.clientX - rect.left;
       const width = rect.width;
@@ -228,7 +218,6 @@ export class PenaltyApp {
     this.p1Pick = null;
     this.p2Pick = null;
     this.isAwaitingAction = true;
-    this.passAndPlayWaiting = false;
 
     // Reset turn timer to 10 seconds before HUD updates (fixes frozen/stale timer render)
     this.timerSecondsRemaining = 10;
@@ -353,8 +342,7 @@ export class PenaltyApp {
     if (this.match.mode === 'online' && this.multiplayerClient) {
       return this.multiplayerClient.yourPlayerId;
     }
-    if (this.match.mode === 'ai') return 'p1';
-    return this.p1Pick === null ? 'p1' : 'p2';
+    return 'p1';
   }
 
   private executeDirection(dir: Direction, timedOut = false): void {
@@ -407,19 +395,6 @@ export class PenaltyApp {
       };
 
       this.executeReveal();
-    } else {
-      // Local 2-Player Pass & Play
-      if (this.p1Pick === null) {
-        this.p1Pick = pick;
-        this.passAndPlayWaiting = true;
-        this.passAndPlayTargetPlayer = 'p2';
-        this.showPassAndPlayModal(true);
-      } else {
-        this.p2Pick = pick;
-        this.passAndPlayWaiting = false;
-        this.showPassAndPlayModal(false);
-        this.executeReveal();
-      }
     }
   }
 
@@ -432,17 +407,6 @@ export class PenaltyApp {
       }
       b.disabled = true;
     });
-  }
-
-  private proceedPassAndPlay(): void {
-    sound.playClick();
-    this.passAndPlayWaiting = false;
-    this.showPassAndPlayModal(false);
-    this.isAwaitingAction = true;
-
-    // Reset buttons for P2
-    this.updateMatchHud();
-    this.startTimer();
   }
 
   private executeReveal(): void {
@@ -557,7 +521,6 @@ export class PenaltyApp {
           this.onlineRematchRequestedByMe = false;
           this.onlineRematchRequestedByOpponent = false;
           this.onlineDisconnectBanner = null;
-          this.onlineOpponentLocked = false;
           this.selectedMode = 'online';
           this.currentScreen = 'match';
 
@@ -582,7 +545,6 @@ export class PenaltyApp {
           this.match.currentShooter = data.currentShooter;
           this.match.currentKeeper = data.currentShooter === 'p1' ? 'p2' : 'p1';
           this.isAwaitingAction = true;
-          this.onlineOpponentLocked = false;
           this.p1Pick = null;
           this.p2Pick = null;
 
@@ -608,11 +570,8 @@ export class PenaltyApp {
           this.startTimer();
           this.updateOnlineTurnStatus();
         },
-        onOpponentLocked: (playerId) => {
-          if (playerId !== this.multiplayerClient?.yourPlayerId) {
-            this.onlineOpponentLocked = true;
-            this.updateOnlineTurnStatus();
-          }
+        onOpponentLocked: () => {
+          // No banner shown to keep the match HUD clean
         },
         onRoundResult: (data) => {
           this.handleOnlineRoundResult(data);
@@ -656,20 +615,6 @@ export class PenaltyApp {
     if (this.onlineDisconnectBanner) {
       textEl.textContent = this.onlineDisconnectBanner;
       textEl.className = 'online-turn-status-text danger';
-      container.style.display = 'flex';
-      return;
-    }
-
-    if (!this.isAwaitingAction) {
-      textEl.innerHTML = '<span class="online-pulse-dot"></span> LOCKED IN · WAITING FOR RIVAL...';
-      textEl.className = 'online-turn-status-text locked';
-      container.style.display = 'flex';
-      return;
-    }
-
-    if (this.onlineOpponentLocked) {
-      textEl.textContent = '⚡ RIVAL LOCKED IN · MAKE YOUR MOVE!';
-      textEl.className = 'online-turn-status-text rival-ready';
       container.style.display = 'flex';
       return;
     }
@@ -871,19 +816,6 @@ export class PenaltyApp {
     return dots.join('');
   }
 
-  private showPassAndPlayModal(show: boolean): void {
-    const modal = this.container.querySelector<HTMLElement>('.pass-play-modal-backdrop');
-    if (modal) {
-      modal.style.display = show ? 'flex' : 'none';
-      if (show) {
-        const titleEl = modal.querySelector('.pass-player-name');
-        if (titleEl) {
-          titleEl.textContent = this.passAndPlayTargetPlayer === 'p1' ? 'PLAYER 1' : 'PLAYER 2';
-        }
-      }
-    }
-  }
-
   // --- Rendering UI Tree ---
 
   public render(): void {
@@ -959,14 +891,11 @@ export class PenaltyApp {
         </div>
 
         <div class="title-menu-actions">
-          <button class="btn-play-primary" id="btnPlayAI">
-            <span>⚽ PLAY VS AI</span>
-          </button>
-          <button class="btn-play-online" id="btnPlayOnline">
+          <button class="btn-play-primary" id="btnPlayOnline">
             <span>🌐 ONLINE 1v1</span>
           </button>
-          <button class="btn-play-secondary" id="btnPlayPassPlay">
-            <span>📱 LOCAL 2-PLAYER</span>
+          <button class="btn-play-secondary" id="btnPlayAI">
+            <span>⚽ PLAY VS AI</span>
           </button>
         </div>
       </div>
@@ -979,19 +908,14 @@ export class PenaltyApp {
     this.container.appendChild(el);
 
     // Bindings
-    el.querySelector('#btnPlayAI')?.addEventListener('click', () => {
-      sound.playClick();
-      this.startNewMatch('ai');
-    });
-
     el.querySelector('#btnPlayOnline')?.addEventListener('click', () => {
       sound.playClick();
       this.openOnlineModal();
     });
 
-    el.querySelector('#btnPlayPassPlay')?.addEventListener('click', () => {
+    el.querySelector('#btnPlayAI')?.addEventListener('click', () => {
       sound.playClick();
-      this.startNewMatch('pass_and_play');
+      this.startNewMatch('ai');
     });
 
     el.querySelector('#btnToggleSound')?.addEventListener('click', () => {
@@ -1056,9 +980,7 @@ export class PenaltyApp {
             ${
               this.match.mode === 'ai'
                 ? `AI · ${this.selectedDifficulty.toUpperCase()}`
-                : this.match.mode === 'online'
-                ? `ONLINE · ROOM ${this.multiplayerClient?.getRoomCode() || ''}`
-                : 'PASS & PLAY'
+                : `ONLINE · ROOM ${this.multiplayerClient?.getRoomCode() || ''}`
             }
           </span>
         </header>
@@ -1121,8 +1043,8 @@ export class PenaltyApp {
           </div>
         </div>
 
-        <!-- Online Turn Status Indicator -->
-        <div class="online-turn-status-container" style="${this.match.mode === 'online' ? 'display:flex;' : 'display:none;'}">
+        <!-- Online Disconnect Alert Indicator (only shown if disconnected) -->
+        <div class="online-turn-status-container" style="display:none;">
           <span class="online-turn-status-text"></span>
         </div>
 
@@ -1159,18 +1081,6 @@ export class PenaltyApp {
           </button>
         </div>
       </div>
-
-      <!-- PASS AND PLAY MODAL -->
-      <div class="game-over-modal-backdrop pass-play-modal-backdrop" style="display:none;">
-        <div class="game-over-card">
-          <div class="go-fulltime-label">PASS THE DEVICE</div>
-          <h2 class="go-headline win pass-player-name" style="font-size:3rem; margin:10px 0;">PLAYER 2</h2>
-          <p class="go-subtext">Keep your choice secret! Hand the device over to choose.</p>
-          <button class="btn-play-again-big" id="btnPassReady" style="width:100%; margin-top:18px;">
-            I'M READY TO PICK
-          </button>
-        </div>
-      </div>
     `;
 
     this.container.appendChild(el);
@@ -1199,10 +1109,6 @@ export class PenaltyApp {
         this.handleDirectionSelect(dir);
       });
     });
-
-    el.querySelector('#btnPassReady')?.addEventListener('click', () => {
-      this.proceedPassAndPlay();
-    });
   }
 
   // --- GAME OVER MODAL (Penaltymen BB component) ---
@@ -1211,7 +1117,7 @@ export class PenaltyApp {
     if (!this.match) return;
 
     // Remove existing if any
-    const existing = this.container.querySelector('.game-over-modal-backdrop:not(.pass-play-modal-backdrop)');
+    const existing = this.container.querySelector('.game-over-modal-backdrop');
     if (existing) existing.remove();
 
     const modal = document.createElement('div');
@@ -1413,15 +1319,6 @@ export class PenaltyApp {
               ${this.settings.reducedMotion ? 'ON' : 'OFF'}
             </button>
           </div>
-
-          <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span>Turn Countdown</span>
-            <select id="selectTimerSetting" style="background:#0B1220; color:#fff; border:1px solid var(--panel-border); padding:6px 10px; border-radius:8px;">
-              <option value="7" ${this.settings.turnDurationSec === 7 ? 'selected' : ''}>7 Seconds (Standard)</option>
-              <option value="4" ${this.settings.turnDurationSec === 4 ? 'selected' : ''}>4 Seconds (Fast)</option>
-              <option value="0" ${this.settings.turnDurationSec === 0 ? 'selected' : ''}>Unlimited (Practice)</option>
-            </select>
-          </div>
         </div>
 
         <button class="btn-play-again-big" id="btnSaveSettings" style="width:100%; margin-top:24px;">
@@ -1453,11 +1350,6 @@ export class PenaltyApp {
       if (this.stadium) this.stadium.setReducedMotion(this.settings.reducedMotion);
       saveSettings(this.settings);
       this.render();
-    });
-
-    backdrop.querySelector('#selectTimerSetting')?.addEventListener('change', (e) => {
-      this.settings.turnDurationSec = parseInt((e.target as HTMLSelectElement).value, 10);
-      saveSettings(this.settings);
     });
 
     backdrop.addEventListener('click', (e) => {
