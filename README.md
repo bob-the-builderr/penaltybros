@@ -130,39 +130,21 @@ npm install
 ```
 
 ### Running Locally (Dev Server)
-
-#### Single-Player & Local Modes:
 ```bash
 npm run dev
 ```
-Open `http://localhost:5173` in your browser.
+Open `http://localhost:5173` in your browser. You can play vs AI, Pass & Play, or open two tabs to test **Online 1v1** matchmaking and shareable room links!
 
-#### Online 1v1 Multiplayer (PartyKit Local Dev):
-Open two terminals:
-
-**Terminal 1 (Multiplayer Edge WebSocket Server):**
+### Running Tests
 ```bash
-npm run party:dev
+npm test
 ```
-Starts PartyKit server on `http://localhost:1999`.
 
-**Terminal 2 (Vite Web App):**
-```bash
-npm run dev
-```
-Open `http://localhost:5173` in two browser tabs or windows to test instant 1v1 online matchmaking and private room code links!
+### Deploying to Vercel (100% Free, Zero Servers)
+1. Push this project to GitHub.
+2. In [Vercel](https://vercel.com), click **Add New Project** and import the repository.
+3. Click **Deploy**.
+4. In **Settings → Domains**, add your custom domain (`penaltybros.com`).
 
-### Deploying Globally
-
-#### Deploying PartyKit Multiplayer Server:
-```bash
-npm run party:deploy
-```
-This deploys `party/server.ts` to Cloudflare Workers edge nodes globally via PartyKit.
-
-#### Building Client Web App:
-```bash
-npm run build
-```
-Generates production build in `dist/` (ready to host on Vercel, Netlify, GitHub Pages, or Cloudflare Pages). Pass `VITE_PARTYKIT_HOST=<your-partykit-subdomain>.partykit.dev` if hosting the frontend on a separate domain.
+Everything (single-player, local 2-player, and global 1v1 online multiplayer) runs directly through Vercel with **zero external backend servers** to maintain or pay for!
 
