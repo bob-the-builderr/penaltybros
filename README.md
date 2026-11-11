@@ -24,38 +24,38 @@ Penalty Bros is a lightweight, responsive browser-based 1v1 penalty shootout gam
 
 ---
 
-## 🧠 Mind-Game Mechanics
+## 🧠 Core Gameplay (Penaltymen Style)
 
-- **6-Zone Goal Grid**: Top/Bottom $\times$ Left/Center/Right (`TL`, `TC`, `TR`, `BL`, `BC`, `BR`).
+- **3 Options Only**:
+  - **Left** (Dive Left)
+  - **Center** (Stay)
+  - **Right** (Dive Right)
+- **1-Click Instant Action**:
+  - Single tap or click immediately locks in your move — zero friction, no multi-step confirm dialogs.
 - **Round Resolution**:
-  - **Same Zone**: Guaranteed save (`SAVE!`).
-  - **Different Zones**: Goal (`GOAL!`).
-  - **High Corners (`TL` / `TR`)**: Aiming for top corners carries a miss risk (post clang or over the bar), which escalates under low Nerve.
-  - **Adjacent Dive Fingertip Save**: A keeper diving into a zone adjacent to the shot has a chance to execute an acrobatic fingertip deflection.
-- **Nerve Meter (0–100)**:
-  - Drains on timeouts (-15), missed shots (-14), and conceded goals (-12).
-  - Climbs on saves (+15) and goals scored (+12).
-  - When Nerve drops below 30, the gauge turns red, shakes, screen vignette activates, and heartbeat audio pounds.
-- **Tells & Glances**:
-  - Before each kick, the rival exhibits subtle body language (leaning or glancing towards a zone).
-  - Tells are ~60% honest.
-- **Bluff / Feint (2 per match)**:
-  - Activating a Feint tricks the rival by displaying a false lean or tell in the opposite direction.
-- **Momentum & Streak Pressure**:
-  - Dynamic UI banners celebrate streaks ("ON FIRE: 2 SAVES IN A ROW!", "ICE COLD: 3 GOALS!").
-  - Entering Sudden Death dims the stadium into a tense heartbeat vignette.
+  - **Same Side**: Keeper saves it! (`SAVED`)
+  - **Different Side**: Ball in the back of the net! (`GOAL`)
+- **10-Second Countdown**:
+  - 10 seconds per kick with tension warning in the final 3 seconds.
+- **High-Stakes Momentum**:
+  - When reaching match point, high-stakes banners trigger: **SCORE TO WIN** or **SAVE TO SURVIVE**.
+  - Sudden death tie-breaking with sub-bass heartbeat audio.
 
 ---
 
 ## ⌨️ Controls & Accessibility
 
 - **Keyboard Support**:
-  - **Zone Selection**: Arrow keys (`Up` / `Down` / `Left` / `Right`) or number keys `1`–`6` or `Q-W-E` / `A-S-D`.
-  - **Confirm Action**: `Space` or `Enter` (`SHOOT` / `DIVE`).
-  - **Bluff / Feint**: `F` key.
-  - **Close Modals**: `Escape` key.
+  - **Left**: `Left Arrow`, `A`, or `1`
+  - **Center**: `Up Arrow`, `Spacebar`, `W`, or `2`
+  - **Right**: `Right Arrow`, `D`, or `3`
+  - **Close Modals**: `Escape` key
 - **Touch & Mouse**:
-  - Touch targets minimum 48px, responsive layout from 360px portrait phones up to desktop.
+  - 3 large responsive bottom buttons (Left / Center / Right) or direct click on the left, center, or right third of the goal canvas.
+- **Color-Blind Friendly**:
+  - Result indicators utilize distinct shapes and icons (`✓` for goal, `✗` for saved) in addition to colors.
+- **Reduced Motion**:
+  - Setting available to toggle off camera shake and flash effects.
 - **Color-Blind Friendly**:
   - Result indicators utilize distinct shapes and icons (`✓` for goal, `✗` for miss/save) in addition to colors.
 - **Reduced Motion**:
